@@ -29,13 +29,19 @@ import urllib.request
 from bot.config import settings
 
 class GroqAIExtractor:
-    def __init__(self, api_key=None, model="llama-3.3-70b-versatile"):
+    def __init__(self, api_key=None, model="llama-3.3-70b-versatile", base_url=None):
         self.api_key = api_key or settings.GROQ_API_KEY
         self.model = model or settings.GROQ_MODEL
+        # Configurable Base URL (supports reverse proxies or custom endpoints)
+        self.base_url = (base_url or settings.GROQ_BASE_URL).rstrip("/")
+
+    def test_connection(self):
+        # Pings {self.base_url}/models to verify API key, network latency, and connectivity
+        ...
 
     def extract_page_structure(self, image_bytes=None, fallback_raw_text=None):
-        # Calls Groq API with Llama 3.3 70B
-        # Fixes broken Persian letters, removes line break fragmentation
+        # Calls {self.base_url}/chat/completions with Llama 3.3 70B
+        # Fixes broken Persian letters, connects line breaks into unified paragraphs
         # Outputs clean JSON blocks (headings, paragraphs, tables)
         ...`
   },

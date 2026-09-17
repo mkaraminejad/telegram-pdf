@@ -46,12 +46,16 @@ class Settings(BaseSettings):
 
     # AI Engine (Groq / Google Gemini Multimodal & Vision Extraction)
     AI_PROVIDER: str = Field(
-        default="gemini",
+        default="groq",
         description="Active AI Provider: 'groq' (Groq Cloud LLM / Vision) or 'gemini' (Google Gemini)"
     )
     GROQ_API_KEY: Optional[str] = Field(
         default=None,
         description="Groq API Key (from console.groq.com)"
+    )
+    GROQ_BASE_URL: str = Field(
+        default="https://api.groq.com/openai/v1",
+        description="Groq API Base URL (can be customized for custom proxies, reverse-proxies, or enterprise endpoints)"
     )
     GROQ_MODEL: str = Field(
         default="llama-3.3-70b-versatile",

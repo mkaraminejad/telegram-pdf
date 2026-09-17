@@ -6,6 +6,7 @@ Word document generation.
 """
 import os
 import json
+import time
 import base64
 import logging
 import urllib.request
@@ -39,13 +40,79 @@ SYSTEM_PROMPT = """شما یک دستیار تخصصی هوش مصنوعی بر�
 class GroqAIExtractor:
     """Intelligent Persian document extractor using Groq API (Llama 3.3 70B / Llama 3.2 Vision)."""
 
-    def __init__(self, api_key: Optional[str] = None, model: Optional[str] = None):
+    def __init__(self, api_key: Optional[str] = None, model: Optional[str] = None, base_url: Optional[str] = None):
         self.api_key = api_key or settings.GROQ_API_KEY or os.environ.get("GROQ_API_KEY")
         self.model = model or settings.GROQ_MODEL or "llama-3.3-70b-versatile"
+        raw_url = base_url or getattr(settings, "GROQ_BASE_URL", None) or os.environ.get("GROQ_BASE_URL") or "https://api.groq.com/openai/v1"
+        self.base_url = raw_url.rstrip("/")
 
     def is_available(self) -> bool:
         """Checks if Groq API key is configured and AI engine is enabled."""
         return bool(self.api_key and settings.USE_AI_ENGINE)
+
+    def test_connection(self) -> Dict[str, Any]:
+        """Tests live connectivity and latency to the configured Groq endpoint."""
+        if not self.api_key:
+            return {
+                "ok": False,
+                "status": "missing_key",
+                "base_url": self.base_url,
+                "model": self.model,
+                "message": "GROQ_API_KEY تنظیم نشده است. لطفاً آن را در فایل .env یا متغیرهای محیطی قرار دهید."
+            }
+
+        start_t = time.time()
+        test_url = f"{self.base_url}/models"
+        try:
+            req = urllib.request.Request(
+                test_url,
+                headers={
+                    "Authorization": f"Bearer {self.api_key}",
+                    "User-Agent": "aistudio-build"
+                }
+            )
+            with urllib.request.urlopen(req, timeout=10) as response:
+                latency_ms = int((time.time() - start_t) * 1000)
+                body = response.read().decode("utf-8")
+                data = json.loads(body)
+                models = [m.get("id") for m in data.get("data", []) if isinstance(m, dict)]
+                return {
+                    "ok": True,
+                    "status": "connected",
+                    "latency_ms": latency_ms,
+                    "base_url": self.base_url,
+                    "model": self.model,
+                    "models_count": len(models),
+                    "available_models": models[:8],
+                    "message": f"اتصال به Groq با موفقیت در {latency_ms} میلی‌ثانیه برقرار شد."
+                }
+        except urllib.error.HTTPError as e:
+            latency_ms = int((time.time() - start_t) * 1000)
+            if e.code == 401:
+                msg = "احراز هویت ناموفق بود (کد ۴۰۱): کلید GROQ_API_KEY معتبر نیست."
+                st = "unauthorized"
+            else:
+                msg = f"خطای سرور Groq با کد {e.code}: {e.reason}"
+                st = "http_error"
+            return {
+                "ok": False,
+                "status": st,
+                "latency_ms": latency_ms,
+                "base_url": self.base_url,
+                "model": self.model,
+                "error_code": e.code,
+                "message": msg
+            }
+        except Exception as e:
+            latency_ms = int((time.time() - start_t) * 1000)
+            return {
+                "ok": False,
+                "status": "unreachable",
+                "latency_ms": latency_ms,
+                "base_url": self.base_url,
+                "model": self.model,
+                "message": f"عدم دسترسی به سرور Groq در آدرس {self.base_url}. خطا: {str(e)}. در صورت فیلتر بودن، می‌توانید GROQ_BASE_URL را به یک پراکسی تغییر دهید."
+            }
 
     def extract_page_structure(
         self,
@@ -57,7 +124,7 @@ class GroqAIExtractor:
             return []
 
         try:
-            url = "https://api.groq.com/openai/v1/chat/completions"
+            url = f"{self.base_url}/chat/completions"
 
             # Determine whether to use vision or text mode
             is_vision_model = "vision" in self.model.lower()
@@ -211,6 +278,18 @@ class UnifiedAIExtractor:
         if provider == "groq":
             return self.groq.is_available()
         return self.gemini.is_available() or self.groq.is_available()
+
+    def test_connection(self) -> Dict[str, Any]:
+        provider = (settings.AI_PROVIDER or "").lower()
+        if provider == "groq" or (self.groq.is_available() and not self.gemini.is_available()):
+            return self.groq.test_connection()
+        return {
+            "ok": bool(self.gemini.is_available()),
+            "status": "connected" if self.gemini.is_available() else "missing_key",
+            "provider": "gemini",
+            "model": settings.AI_MODEL_NAME,
+            "message": "کلید Gemini تنظیم شده است." if self.gemini.is_available() else "کلید Gemini تنظیم نشده است."
+        }
 
     def get_active_provider_name(self) -> str:
         provider = (settings.AI_PROVIDER or "").lower()

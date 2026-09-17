@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   FileText, 
   Download, 
@@ -11,7 +11,12 @@ import {
   Table as TableIcon,
   RefreshCw,
   Zap,
-  CheckCircle
+  CheckCircle,
+  Activity,
+  Wifi,
+  Globe,
+  ShieldAlert,
+  Terminal
 } from 'lucide-react';
 import { normalizePersianText, detectDirection, ZWNJ } from '../utils/persianNormalizer';
 import { generatePersianDocxFromBlocks, generatePersianDocx } from '../utils/docxGenerator';
@@ -21,6 +26,17 @@ interface ContentBlock {
   level?: number;
   text?: string;
   data?: string[][];
+}
+
+interface GroqStatusState {
+  ok: boolean;
+  status: 'connected' | 'missing_key' | 'unauthorized' | 'unreachable' | 'http_error' | 'idle' | 'loading';
+  latencyMs?: number;
+  baseUrl?: string;
+  model?: string;
+  modelsCount?: number;
+  availableModels?: string[];
+  message?: string;
 }
 
 const PRESET_SAMPLES = [
@@ -153,6 +169,45 @@ export const LiveConverter: React.FC = () => {
   const [copied, setCopied] = useState(false);
   const [aiStep, setAiStep] = useState<string>('');
 
+  const [groqStatus, setGroqStatus] = useState<GroqStatusState>({
+    ok: false,
+    status: 'loading',
+    baseUrl: 'https://api.groq.com/openai/v1',
+    model: 'llama-3.3-70b-versatile',
+  });
+  const [isCheckingGroq, setIsCheckingGroq] = useState(false);
+
+  const checkGroqConnection = async () => {
+    setIsCheckingGroq(true);
+    try {
+      const res = await fetch('/api/groq/status');
+      if (res.ok) {
+        const data = await res.json();
+        setGroqStatus(data);
+      } else {
+        setGroqStatus({
+          ok: false,
+          status: 'http_error',
+          baseUrl: 'https://api.groq.com/openai/v1',
+          message: `پاسخ ناموفق از سرور محلی (کد ${res.status})`,
+        });
+      }
+    } catch (err: any) {
+      setGroqStatus({
+        ok: false,
+        status: 'unreachable',
+        baseUrl: 'https://api.groq.com/openai/v1',
+        message: err.message || 'خطا در ارتباط با سرور محلی',
+      });
+    } finally {
+      setIsCheckingGroq(false);
+    }
+  };
+
+  useEffect(() => {
+    checkGroqConnection();
+  }, []);
+
   const handleSelectSample = (idx: number) => {
     setSelectedSampleIdx(idx);
     setRawInput(PRESET_SAMPLES[idx].badText);
@@ -164,7 +219,7 @@ export const LiveConverter: React.FC = () => {
     setAiStep('ارسال به صف هوش مصنوعی در پس‌زمینه (Celery Worker)...');
 
     try {
-      setAiStep('تحلیل بصری و استخراج چندوجهی با مدل هوش مصنوعی (Gemini Vision)...');
+      setAiStep('در حال پردازش سریع با مدل هوش مصنوعی Groq (Llama 3.3 70B)...');
       const response = await fetch('/api/convert-ai', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -272,6 +327,107 @@ export const LiveConverter: React.FC = () => {
             <span>{aiStep}</span>
           </div>
         )}
+      </div>
+
+      {/* Groq Endpoint & Connection Status Monitor */}
+      <div className="bg-white border border-slate-200 rounded-xl p-5 shadow-xs">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-slate-100">
+          <div className="flex items-center gap-3">
+            <div className={`w-9 h-9 rounded-lg flex items-center justify-center ${
+              groqStatus.status === 'connected'
+                ? 'bg-emerald-50 text-emerald-600'
+                : groqStatus.status === 'missing_key'
+                ? 'bg-amber-50 text-amber-600'
+                : 'bg-rose-50 text-rose-600'
+            }`}>
+              <Activity className="w-5 h-5" />
+            </div>
+            <div>
+              <div className="flex items-center gap-2">
+                <span className="text-sm font-bold text-slate-800">
+                  وضعیت اتصال به هوش مصنوعی Groq
+                </span>
+                {groqStatus.status === 'connected' && (
+                  <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-emerald-100 text-emerald-800">
+                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
+                    متصل ({groqStatus.latencyMs}ms)
+                  </span>
+                )}
+                {groqStatus.status === 'missing_key' && (
+                  <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-medium bg-amber-100 text-amber-800">
+                    کلید GROQ_API_KEY وارد نشده
+                  </span>
+                )}
+                {groqStatus.status === 'unreachable' && (
+                  <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-medium bg-rose-100 text-rose-800">
+                    عدم دسترسی / فیلتر شبکه
+                  </span>
+                )}
+                {groqStatus.status === 'unauthorized' && (
+                  <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-medium bg-rose-100 text-rose-800">
+                    کلید نامعتبر (401)
+                  </span>
+                )}
+              </div>
+              <p className="text-[11px] text-slate-500 mt-0.5">
+                تست پینگ زنده به اندپوینت Groq و بررسی درستی آدرس URL و مدل هوش مصنوعی
+              </p>
+            </div>
+          </div>
+
+          <button
+            onClick={checkGroqConnection}
+            disabled={isCheckingGroq}
+            className="flex items-center justify-center gap-2 px-3.5 py-2 rounded-lg border border-slate-200 bg-slate-50 hover:bg-slate-100 text-slate-700 text-xs font-semibold transition-all disabled:opacity-50 shrink-0"
+          >
+            <RefreshCw className={`w-3.5 h-3.5 ${isCheckingGroq ? 'animate-spin text-indigo-600' : ''}`} />
+            {isCheckingGroq ? 'در حال پینگ گرفتن...' : 'تست مجدد پینگ Groq'}
+          </button>
+        </div>
+
+        {/* URL & Config Details */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-3 pt-4 text-xs">
+          <div className="p-3 bg-slate-50 rounded-lg border border-slate-100">
+            <div className="text-slate-500 text-[11px] font-medium mb-1 flex items-center gap-1.5">
+              <Globe className="w-3.5 h-3.5 text-indigo-600" />
+              آدرس ارائه‌دهنده (Base URL):
+            </div>
+            <div className="font-mono text-slate-800 font-semibold text-[11px] text-left break-all" dir="ltr">
+              {groqStatus.baseUrl || 'https://api.groq.com/openai/v1'}
+            </div>
+            <div className="text-[10px] text-slate-400 mt-1">
+              قابل تنظیم در <code className="bg-slate-200/70 px-1 py-0.5 rounded">.env</code> با متغیر <code className="text-indigo-700">GROQ_BASE_URL</code> (جهت پروکسی در صورت فیلترینگ)
+            </div>
+          </div>
+
+          <div className="p-3 bg-slate-50 rounded-lg border border-slate-100">
+            <div className="text-slate-500 text-[11px] font-medium mb-1 flex items-center gap-1.5">
+              <Cpu className="w-3.5 h-3.5 text-indigo-600" />
+              مدل فعال Groq:
+            </div>
+            <div className="font-mono text-slate-800 font-semibold text-[11px] text-left" dir="ltr">
+              {groqStatus.model || 'llama-3.3-70b-versatile'}
+            </div>
+            <div className="text-[10px] text-slate-400 mt-1">
+              سرعت فوق‌العاده بالا با موتور شتاب‌دهنده سخت‌افزاری Groq LPU
+            </div>
+          </div>
+
+          <div className="p-3 bg-slate-50 rounded-lg border border-slate-100">
+            <div className="text-slate-500 text-[11px] font-medium mb-1 flex items-center gap-1.5">
+              <Wifi className="w-3.5 h-3.5 text-indigo-600" />
+              وضعیت ارتباط و پاسخ:
+            </div>
+            <div className="text-[11px] font-semibold text-slate-800">
+              {groqStatus.message || 'در حال آماده‌سازی...'}
+            </div>
+            {groqStatus.modelsCount ? (
+              <div className="text-[10px] text-emerald-600 mt-1 font-mono">
+                مدل‌های در دسترس: {groqStatus.modelsCount} مدل
+              </div>
+            ) : null}
+          </div>
+        </div>
       </div>
 
       {/* Preset Selector */}

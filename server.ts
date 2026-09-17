@@ -34,16 +34,104 @@ async function startServer() {
     const hasGroq = Boolean(process.env.GROQ_API_KEY);
     const hasGemini = Boolean(process.env.GEMINI_API_KEY);
     const provider = process.env.AI_PROVIDER || (hasGroq ? "groq" : "gemini");
+    const groqBaseUrl = (process.env.GROQ_BASE_URL || "https://api.groq.com/openai/v1").replace(/\/+$/, "");
 
     res.json({
       status: "ok",
       provider,
       hasGroqKey: hasGroq,
       hasGeminiKey: hasGemini,
+      groqBaseUrl,
       groqModel: process.env.GROQ_MODEL || "llama-3.3-70b-versatile",
       geminiModel: "gemini-3.8-flash",
       port: PORT,
     });
+  });
+
+  // 1b. Groq Connection Status & Live Ping Check
+  app.get("/api/groq/status", async (req, res) => {
+    const groqKey = process.env.GROQ_API_KEY;
+    const groqBaseUrl = (process.env.GROQ_BASE_URL || "https://api.groq.com/openai/v1").replace(/\/+$/, "");
+    const groqModel = process.env.GROQ_MODEL || "llama-3.3-70b-versatile";
+
+    if (!groqKey) {
+      return res.json({
+        ok: false,
+        status: "missing_key",
+        baseUrl: groqBaseUrl,
+        model: groqModel,
+        message: "کلید GROQ_API_KEY در فایل .env یا متغیرهای محیطی یافت نشد.",
+      });
+    }
+
+    const startTime = Date.now();
+    try {
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 6000);
+
+      const pingRes = await fetch(`${groqBaseUrl}/models`, {
+        method: "GET",
+        headers: {
+          Authorization: `Bearer ${groqKey}`,
+          "User-Agent": "aistudio-build",
+        },
+        signal: controller.signal,
+      });
+      clearTimeout(timeoutId);
+
+      const latencyMs = Date.now() - startTime;
+
+      if (pingRes.ok) {
+        const data = await pingRes.json();
+        const availableModels = (data.data || []).map((m: any) => m.id);
+        return res.json({
+          ok: true,
+          status: "connected",
+          latencyMs,
+          baseUrl: groqBaseUrl,
+          model: groqModel,
+          modelsCount: availableModels.length,
+          availableModels: availableModels.slice(0, 10),
+          message: `اتصال به Groq با موفقیت در ${latencyMs} میلی‌ثانیه برقرار شد.`,
+        });
+      } else if (pingRes.status === 401) {
+        return res.json({
+          ok: false,
+          status: "unauthorized",
+          statusCode: 401,
+          latencyMs,
+          baseUrl: groqBaseUrl,
+          model: groqModel,
+          message: "احراز هویت ناموفق بود (کد ۴۰۱). لطفاً صحت کلید GROQ_API_KEY را بررسی فرمایید.",
+        });
+      } else {
+        const errText = await pingRes.text();
+        return res.json({
+          ok: false,
+          status: "http_error",
+          statusCode: pingRes.status,
+          latencyMs,
+          baseUrl: groqBaseUrl,
+          model: groqModel,
+          message: `خطای سرور Groq با کد ${pingRes.status}: ${errText.slice(0, 150)}`,
+        });
+      }
+    } catch (err: any) {
+      const latencyMs = Date.now() - startTime;
+      const isTimeout = err.name === "AbortError";
+      return res.json({
+        ok: false,
+        status: "unreachable",
+        latencyMs,
+        baseUrl: groqBaseUrl,
+        model: groqModel,
+        isTimeout,
+        error: err.message,
+        message: isTimeout
+          ? `مهلت زمان اتصال به Groq (${groqBaseUrl}) به پایان رسید (Timeout). در صورت فیلتر بودن، می‌توانید GROQ_BASE_URL را به یک آدرس پراکسی تغییر دهید.`
+          : `امکان برقراری ارتباط با ${groqBaseUrl} وجود ندارد: ${err.message}. در صورت فیلترینگ، می‌توانید متغیر GROQ_BASE_URL را تنظیم فرمایید.`,
+      });
+    }
   });
 
   // 2. AI Persian Document Conversion & Structure Extraction (Groq + Gemini)
@@ -72,6 +160,7 @@ async function startServer() {
 
       // Try Groq if selected or if Groq key is present
       if ((provider === "groq" || !process.env.GEMINI_API_KEY) && groqKey) {
+        const groqBaseUrl = (process.env.GROQ_BASE_URL || "https://api.groq.com/openai/v1").replace(/\/+$/, "");
         const groqModel = process.env.GROQ_MODEL || "llama-3.3-70b-versatile";
         usedModel = groqModel;
         usedProvider = "groq";
@@ -101,7 +190,7 @@ async function startServer() {
           messages.push({ role: "user", content: prompt });
         }
 
-        const groqRes = await fetch("https://api.groq.com/openai/v1/chat/completions", {
+        const groqRes = await fetch(`${groqBaseUrl}/chat/completions`, {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
