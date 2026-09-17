@@ -1,0 +1,6 @@
+{
+  "name": "Persian PDF to DOCX Telegram Bot",
+  "description": "Production-ready Telegram Bot MVP for converting Persian text and scanned PDFs to formatted RTL/BiDi Word documents",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
