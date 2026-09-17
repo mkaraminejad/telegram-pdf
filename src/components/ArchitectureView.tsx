@@ -40,7 +40,7 @@ export const ArchitectureView: React.FC = () => {
               Celery + Redis
             </span>
             <span className="px-3 py-1.5 bg-indigo-50 text-indigo-700 rounded-lg text-xs font-mono font-semibold">
-              Gemini Vision AI (Background)
+              Groq (Llama 3.3) / Gemini AI
             </span>
           </div>
         </div>

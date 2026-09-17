@@ -44,7 +44,19 @@ class Settings(BaseSettings):
         description="Root temporary storage path for isolated task files"
     )
 
-    # AI Engine (Google Gemini Vision & Multimodal Extraction)
+    # AI Engine (Groq / Google Gemini Multimodal & Vision Extraction)
+    AI_PROVIDER: str = Field(
+        default="gemini",
+        description="Active AI Provider: 'groq' (Groq Cloud LLM / Vision) or 'gemini' (Google Gemini)"
+    )
+    GROQ_API_KEY: Optional[str] = Field(
+        default=None,
+        description="Groq API Key (from console.groq.com)"
+    )
+    GROQ_MODEL: str = Field(
+        default="llama-3.3-70b-versatile",
+        description="Groq model (e.g. llama-3.3-70b-versatile or llama-3.2-11b-vision-preview)"
+    )
     GEMINI_API_KEY: Optional[str] = Field(
         default=None,
         description="Google Gemini API Key for AI-powered OCR, visual understanding & Persian text restoration"

@@ -210,6 +210,10 @@ cp .env.example .env
 | متغیر | مقدار پیش‌فرض | الزامی؟ | توضیح کاربردی |
 | :--- | :--- | :---: | :--- |
 | `TELEGRAM_BOT_TOKEN` | - | **بله** | توکن احراز هویت ربات دریافتی از @BotFather تلگرام |
+| `GROQ_API_KEY` | `None` | پیشنهادی | کلید API پرسرعت از کنسول Groq (https://console.groq.com) |
+| `AI_PROVIDER` | `groq` | خیر | ارائه‌دهنده فعال هوش مصنوعی: `groq` یا `gemini` |
+| `GROQ_MODEL` | `llama-3.3-70b-versatile` | خیر | مدل هوش مصنوعی در Groq (مانند `llama-3.3-70b-versatile` یا `llama-3.2-11b-vision-preview`) |
+| `GEMINI_API_KEY` | `None` | خیر | کلید جایگزین Google Gemini در صورت استفاده از گوگل |
 | `REDIS_URL` | `redis://redis:6379/0` | **بله** | نشانی اتصال به سرور یا کانتینر ردیس |
 | `MAX_FILE_SIZE_MB` | `20` | خیر | حداکثر حجم مجاز فایل PDF به مگابایت (پیش‌فرض ۲۰ مگابایت) |
 | `MAX_PAGE_COUNT` | `30` | خیر | حداکثر صفحات مجاز در هر فایل PDF (پیش‌فرض ۳۰ صفحه) |

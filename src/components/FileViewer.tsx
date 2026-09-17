@@ -14,32 +14,29 @@ import { ProjectFile } from '../types';
 const PROJECT_FILES: ProjectFile[] = [
   {
     path: 'bot/services/ai_extractor.py',
-    description: 'موتور هوش مصنوعی چندوجهی (Gemini Vision) برای بازخوانی پس‌زمینه اسناد فارسی، حذف وارونگی کلمات و استخراج جداول',
+    description: 'موتور هوش مصنوعی یکپارچه Groq (با سرعت فوق‌العاده Llama 3.3 70B) و Gemini جهت بازخوانی اسناد، رفع شکستگی کلمات و استخراج جداول',
     category: 'services',
-    code: `"""AI-Powered Persian Document Extraction and Layout Understanding.
+    code: `"""AI-Powered Persian Document Extraction using Groq & Google Gemini.
 
-Leverages Google Gemini Multimodal Vision to eliminate reversed Persian characters,
-restore disconnected letters, detect tables, headings, lists, and construct
-high-fidelity Word documents in the background.
+Supports Groq (Llama 3.3 70B Versatile, Llama 3.2 Vision) and Google Gemini (gemini-3.8-flash)
+for high-speed layout understanding, word de-scrambling, Persian OCR correction, and
+Word document generation.
 """
 import os
 import json
 import base64
 import urllib.request
-from typing import List, Dict, Any, Optional
 from bot.config import settings
-from bot.services.normalizer import normalizer
 
-class GeminiAIExtractor:
-    def __init__(self, api_key: Optional[str] = None, model: Optional[str] = None):
-        self.api_key = api_key or settings.GEMINI_API_KEY
-        self.model = model or "gemini-3.8-flash"
+class GroqAIExtractor:
+    def __init__(self, api_key=None, model="llama-3.3-70b-versatile"):
+        self.api_key = api_key or settings.GROQ_API_KEY
+        self.model = model or settings.GROQ_MODEL
 
-    def extract_page_structure(self, image_bytes: Optional[bytes] = None, fallback_raw_text: Optional[str] = None):
-        # 1. Encodes page image to base64
-        # 2. Sends to Gemini Vision with Persian structural instruction
-        # 3. Recovers clean JSON blocks (headings, tables, paragraphs, bullets)
-        # 4. Eliminates reversed words and disconnected letters completely
+    def extract_page_structure(self, image_bytes=None, fallback_raw_text=None):
+        # Calls Groq API with Llama 3.3 70B
+        # Fixes broken Persian letters, removes line break fragmentation
+        # Outputs clean JSON blocks (headings, paragraphs, tables)
         ...`
   },
   {

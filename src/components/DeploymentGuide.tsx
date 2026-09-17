@@ -25,7 +25,10 @@ export const DeploymentGuide: React.FC = () => {
       title: '۱. راه‌اندازی با Docker Compose (سرور لینوکس، اوبونتو، دبیان)',
       cmd: `# ۱. ساخت فایل محیطی
 cp .env.example .env
-nano .env  # توکن TELEGRAM_BOT_TOKEN را جایگزین کنید
+nano .env  # مقادیر TELEGRAM_BOT_TOKEN و GROQ_API_KEY را وارد کنید:
+# GROQ_API_KEY=gsk_your_groq_api_key_here
+# AI_PROVIDER=groq
+# GROQ_MODEL=llama-3.3-70b-versatile
 
 # ۲. بیلد و اجرای کانتینرها در پس‌زمینه
 docker compose up -d --build
