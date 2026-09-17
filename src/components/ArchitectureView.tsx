@@ -39,8 +39,8 @@ export const ArchitectureView: React.FC = () => {
             <span className="px-3 py-1.5 bg-sky-50 text-sky-700 rounded-lg text-xs font-mono">
               Celery + Redis
             </span>
-            <span className="px-3 py-1.5 bg-purple-50 text-purple-700 rounded-lg text-xs font-mono">
-              Tesseract (fas)
+            <span className="px-3 py-1.5 bg-indigo-50 text-indigo-700 rounded-lg text-xs font-mono font-semibold">
+              Gemini Vision AI (Background)
             </span>
           </div>
         </div>
@@ -76,12 +76,13 @@ export const ArchitectureView: React.FC = () => {
           <div className="p-4 rounded-lg border border-slate-100 bg-slate-50/70 hover:bg-slate-50 transition-colors">
             <div className="flex items-center gap-2 text-emerald-600 font-bold mb-2">
               <FileText className="w-5 h-5" />
-              <span>متخصص OCR و زبان فارسی</span>
+              <span>متخصص OCR و هوش مصنوعی فارسی</span>
             </div>
             <ul className="text-xs text-slate-600 space-y-1.5 list-disc list-inside">
+              <li>بازخوانی هوشمند تصویری در پس‌زمینه با مدل Gemini Vision و حذف خروجی‌های وارونه</li>
               <li>تبدیل حروف عربی («ي»، «ك») به استاندارد فارسی («ی»، «ک»)</li>
               <li>تنظیم خودکار نیم‌فاصله (ZWNJ) برای پیشوندها و پسوندها</li>
-              <li>جداسازی متون دوزبانه و حفظ ارقام و عبارات انگلیسی در راستا</li>
+              <li>شناسایی دقیق ساختار جداول، تیترها و لیست‌ها با حفظ جهت RTL</li>
               <li>تزریق تگ‌های درونی OpenXML نظیر <code className="text-emerald-700">w:bidi</code> و <code className="text-emerald-700">w:rtl</code></li>
             </ul>
           </div>
@@ -146,9 +147,9 @@ export const ArchitectureView: React.FC = () => {
 
           <div className="p-4 rounded-lg border border-amber-200 bg-amber-50/40 text-center">
             <span className="w-7 h-7 rounded-full bg-amber-600 text-white inline-flex items-center justify-center text-xs font-bold mb-2">۳</span>
-            <div className="font-bold text-sm text-slate-800 mb-1">تشخیص متن یا اسکن</div>
+            <div className="font-bold text-sm text-slate-800 mb-1">هوش مصنوعی در پس‌زمینه</div>
             <p className="text-xs text-slate-600">
-              PyMuPDF تراکم کاراکترها را می‌سنجد. صفحات متنی مستقیم استخراج و صفحات تصویری به Tesseract OCR فارسی ارجاع می‌شوند.
+              مدل چندوجهی Gemini Vision صفحات را بصری بازخوانی کرده، وارونگی حروف را حذف و ساختار جداول و عناوین را با دقت بالا استخراج می‌کند.
             </p>
           </div>
 

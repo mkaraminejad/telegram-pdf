@@ -13,6 +13,36 @@ import { ProjectFile } from '../types';
 
 const PROJECT_FILES: ProjectFile[] = [
   {
+    path: 'bot/services/ai_extractor.py',
+    description: 'موتور هوش مصنوعی چندوجهی (Gemini Vision) برای بازخوانی پس‌زمینه اسناد فارسی، حذف وارونگی کلمات و استخراج جداول',
+    category: 'services',
+    code: `"""AI-Powered Persian Document Extraction and Layout Understanding.
+
+Leverages Google Gemini Multimodal Vision to eliminate reversed Persian characters,
+restore disconnected letters, detect tables, headings, lists, and construct
+high-fidelity Word documents in the background.
+"""
+import os
+import json
+import base64
+import urllib.request
+from typing import List, Dict, Any, Optional
+from bot.config import settings
+from bot.services.normalizer import normalizer
+
+class GeminiAIExtractor:
+    def __init__(self, api_key: Optional[str] = None, model: Optional[str] = None):
+        self.api_key = api_key or settings.GEMINI_API_KEY
+        self.model = model or "gemini-3.8-flash"
+
+    def extract_page_structure(self, image_bytes: Optional[bytes] = None, fallback_raw_text: Optional[str] = None):
+        # 1. Encodes page image to base64
+        # 2. Sends to Gemini Vision with Persian structural instruction
+        # 3. Recovers clean JSON blocks (headings, tables, paragraphs, bullets)
+        # 4. Eliminates reversed words and disconnected letters completely
+        ...`
+  },
+  {
     path: 'bot/services/normalizer.py',
     description: 'موتور جامع نرمال‌سازی فارسی، تبدیل ي/ك، ارقام، نیم‌فاصله‌ها و علائم نگارشی',
     category: 'services',

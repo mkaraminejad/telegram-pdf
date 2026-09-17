@@ -109,8 +109,11 @@ def convert_pdf_task(
             "✅ فایل Word با موفقیت ساخته شد.\n\n"
             f"📄 تعداد صفحات: {result.total_pages}\n"
         )
-        if result.is_scanned:
-            caption += "🔍 نوع سند: اسکن‌شده (با OCR فارسی استخراج شد)\n"
+        if getattr(result, "is_ai_powered", False):
+            caption += "🤖 پردازش: هوش مصنوعی چندوجهی (Gemini Multimodal)\n"
+            caption += "✨ رفع کامل وارونگی کلمات، اتصال حروف و ساختاردهی جداول و تیترها"
+        elif result.is_scanned:
+            caption += "🔍 نوع سند: اسکن‌شده (با OCR استخراج شد)\n"
             caption += "⚠️ برای فایل‌های اسکن‌شده یا جدول‌های پیچیده، بازبینی نهایی توصیه می‌شود."
         else:
             caption += "📝 نوع سند: متن‌محور (استخراج مستقیم و حفظ ساختار)"

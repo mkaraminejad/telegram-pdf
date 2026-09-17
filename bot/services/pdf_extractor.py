@@ -14,6 +14,7 @@ except ImportError:
     fitz = None
 
 from bot.services.ocr_engine import BaseOCREngine, TesseractOCREngine
+from bot.services.ai_extractor import ai_extractor, GeminiAIExtractor
 from bot.config import settings
 
 logger = logging.getLogger(__name__)
@@ -46,6 +47,7 @@ class ExtractionResult:
     scanned_pages_count: int
     text_pages_count: int
     pages_content: List[Dict[str, Any]]
+    is_ai_powered: bool = False
 
 
 class PDFExtractor:
@@ -112,14 +114,15 @@ class PDFExtractor:
                 total_pages=total_pages,
                 scanned_pages_count=scanned_pages_count,
                 text_pages_count=text_pages_count,
-                pages_content=pages_content
+                pages_content=pages_content,
+                is_ai_powered=ai_extractor.is_available()
             )
 
         finally:
             doc.close()
 
     def _extract_page(self, page: Any, page_num: int) -> Tuple[bool, List[Dict[str, Any]]]:
-        """Extracts content from an individual page, determining whether to use direct extraction or OCR."""
+        """Extracts content from an individual page, determining whether to use AI Multimodal, direct extraction or OCR."""
         # Check raw text length
         raw_text = page.get_text("text").strip()
         has_images = len(page.get_images()) > 0
@@ -127,6 +130,19 @@ class PDFExtractor:
         # Heuristic: If text length is very low (< 40 characters) and has images or blank canvas, treat as scanned
         is_scanned = len(raw_text) < 40 and (has_images or len(raw_text) == 0)
 
+        # 🌟 Primary Method: Google Gemini AI Multimodal Vision & Layout Restoration
+        if ai_extractor.is_available():
+            logger.info("Page %d: Utilizing Gemini AI Multimodal Vision for Persian document restoration...", page_num + 1)
+            try:
+                pix = page.get_pixmap(dpi=self.ocr_dpi)
+                img_bytes = pix.tobytes("png")
+                ai_blocks = ai_extractor.extract_page_structure(image_bytes=img_bytes, fallback_raw_text=raw_text)
+                if ai_blocks and len(ai_blocks) > 0:
+                    return is_scanned, ai_blocks
+            except Exception as e:
+                logger.warning("AI extraction failed on page %d, falling back to local extractor: %s", page_num + 1, e)
+
+        # Fallback Method: Local PyMuPDF + Tesseract
         blocks: List[Dict[str, Any]] = []
 
         if is_scanned:

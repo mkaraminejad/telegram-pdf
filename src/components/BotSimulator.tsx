@@ -72,7 +72,7 @@ export const BotSimulator: React.FC = () => {
     }, 400);
   };
 
-  const simulatePDFUpload = async (type: 'text' | 'scanned' | 'invalid' | 'encrypted' | 'group') => {
+  const simulatePDFUpload = async (type: 'text' | 'scanned' | 'invalid' | 'encrypted' | 'group' | 'ai') => {
     if (type === 'group') {
       addMessage({ sender: 'user', text: '/start (در گروه تلگرامی)' });
       setTimeout(() => {
@@ -114,8 +114,10 @@ export const BotSimulator: React.FC = () => {
       return;
     }
 
-    const filename = type === 'text' ? 'کتاب_فارسی_متن‌محور.pdf' : 'سند_اسکن‌شده_قدیمی.pdf';
-    const size = type === 'text' ? '1.4 MB' : '5.8 MB';
+    const filename = type === 'ai' 
+      ? 'سند_فارسی_با_هوش_مصنوعی_Gemini.pdf'
+      : (type === 'text' ? 'کتاب_فارسی_متن‌محور.pdf' : 'سند_اسکن‌شده_قدیمی.pdf');
+    const size = type === 'ai' ? '2.8 MB' : (type === 'text' ? '1.4 MB' : '5.8 MB');
 
     // Step 1: User sends document
     addMessage({
@@ -130,7 +132,9 @@ export const BotSimulator: React.FC = () => {
     setTimeout(() => {
       addMessage({
         sender: 'bot',
-        text: '⏳ فایل دریافت شد؛ در حال تبدیل…'
+        text: type === 'ai'
+          ? '⏳ فایل دریافت شد؛ وظیفه به صف پس‌زمینه (Celery) ارجاع شد…\n🤖 موتور هوش مصنوعی چندوجهی (Gemini Multimodal) در حال بازخوانی تصویری و ساختاربندی سند است.'
+          : '⏳ فایل دریافت شد؛ در حال تبدیل…'
       });
     }, 300);
 
@@ -140,7 +144,20 @@ export const BotSimulator: React.FC = () => {
       let sampleContent = '';
       let botCaption = '';
 
-      if (type === 'text') {
+      if (type === 'ai') {
+        sampleTitle = 'سند بازتولیدشده با هوش مصنوعی در پس‌زمینه (Gemini)';
+        sampleContent = 
+          'این سند توسط هوش مصنوعی چندوجهی در کارگر پس‌زمینه (Celery Worker) بازخوانی و بازسازی شده است.\n' +
+          '• کلیه حروف جداافتاده و کلمات وارونه به صورت طبیعی و روان پیوند خوردند.\n' +
+          '• جهت متن به صورت راست‌به‌چپ واقعی (Native OpenXML RTL & BiDi) تنظیم گردید.\n' +
+          '• اعداد فارسی، جداول چندستونه و اصطلاحات انگلیسی نظیر Python 3.12، Docker و FastAPI بدون به‌هم‌ریختگی درج شدند.\n' +
+          '• علائم نگارشی فارسی نظیر «گیومه»، ویرگول (،) و علامت سؤال (؟) استانداردسازی شدند.';
+        botCaption = 
+          '✅ فایل Word با موفقیت ساخته شد.\n\n' +
+          '📄 تعداد صفحات: ۲ صفحه\n' +
+          '🤖 پردازش: هوش مصنوعی چندوجهی در پس‌زمینه (Gemini Multimodal)\n' +
+          '✨ رفع کامل وارونگی کلمات، اتصال حروف و ساختاردهی جداول و تیترها';
+      } else if (type === 'text') {
         sampleTitle = 'گزارش تحلیلی هوش مصنوعی و زبان فارسی';
         sampleContent = 
           'این سند نمونه با استخراج مستقیم متن و ساختار تولید شده است.\n' +
@@ -163,7 +180,7 @@ export const BotSimulator: React.FC = () => {
         botCaption = 
           '✅ فایل Word با موفقیت ساخته شد.\n\n' +
           '📄 تعداد صفحات: ۱ صفحه\n' +
-          '🔍 نوع سند: اسکن‌شده (با OCR فارسی استخراج شد)\n' +
+          '🔍 نوع سند: اسکن‌شده (با OCR استخراج شد)\n' +
           '⚠️ برای فایل‌های اسکن‌شده یا جدول‌های پیچیده، بازبینی نهایی توصیه می‌شود.';
       }
 
@@ -176,7 +193,7 @@ export const BotSimulator: React.FC = () => {
         sender: 'bot',
         text: botCaption,
         documentName: filename.replace('.pdf', '.docx'),
-        documentSize: '18.4 KB',
+        documentSize: '22.4 KB',
         docxDownloadUrl: downloadUrl,
       });
     }, 1800);
@@ -221,6 +238,14 @@ export const BotSimulator: React.FC = () => {
       {/* Quick Action Chips */}
       <div className="flex flex-wrap gap-2 items-center">
         <span className="text-xs font-medium text-slate-500 ml-1">تست‌های سریع:</span>
+        <button
+          onClick={() => simulatePDFUpload('ai')}
+          disabled={isProcessing}
+          className="px-3.5 py-1.5 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white font-semibold text-xs shadow-xs transition-colors flex items-center gap-1.5"
+        >
+          <Sparkles className="w-3.5 h-3.5 text-amber-300" />
+          ارسال PDF با هوش مصنوعی (Gemini Vision)
+        </button>
         <button
           onClick={() => simulatePDFUpload('text')}
           disabled={isProcessing}

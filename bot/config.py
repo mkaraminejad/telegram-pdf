@@ -44,6 +44,20 @@ class Settings(BaseSettings):
         description="Root temporary storage path for isolated task files"
     )
 
+    # AI Engine (Google Gemini Vision & Multimodal Extraction)
+    GEMINI_API_KEY: Optional[str] = Field(
+        default=None,
+        description="Google Gemini API Key for AI-powered OCR, visual understanding & Persian text restoration"
+    )
+    AI_MODEL_NAME: str = Field(
+        default="gemini-3.8-flash",
+        description="Gemini model for Persian multimodal document extraction"
+    )
+    USE_AI_ENGINE: bool = Field(
+        default=True,
+        description="Enable AI-powered Persian document understanding in background worker"
+    )
+
     # OCR Settings
     TESSERACT_LANG: str = Field(
         default="fas+eng",
