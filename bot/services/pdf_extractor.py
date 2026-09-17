@@ -9,9 +9,12 @@ from typing import List, Dict, Any, Tuple
 from dataclasses import dataclass
 
 try:
-    import fitz  # PyMuPDF
+    import pymupdf as fitz  # Modern PyMuPDF import
 except ImportError:
-    fitz = None
+    try:
+        import fitz  # Legacy PyMuPDF fallback
+    except ImportError:
+        fitz = None
 
 from bot.services.ocr_engine import BaseOCREngine, TesseractOCREngine
 from bot.services.ai_extractor import ai_extractor, GeminiAIExtractor

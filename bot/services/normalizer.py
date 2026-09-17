@@ -171,3 +171,7 @@ class PersianNormalizer:
         # Strip spaces at line start/end
         lines = [line.strip() for line in text.split('\n')]
         return '\n'.join(lines).strip()
+
+
+# Singleton instance for convenient reuse across services
+normalizer = PersianNormalizer(convert_digits_to_persian=True)

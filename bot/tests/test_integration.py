@@ -14,9 +14,12 @@ from bot.services.ocr_engine import BaseOCREngine
 from bot.services.docx_builder import DocxBuilder
 
 try:
-    import fitz  # PyMuPDF
+    import pymupdf as fitz
 except ImportError:
-    fitz = None
+    try:
+        import fitz
+    except ImportError:
+        fitz = None
 
 
 class MockPersianOCREngine(BaseOCREngine):
